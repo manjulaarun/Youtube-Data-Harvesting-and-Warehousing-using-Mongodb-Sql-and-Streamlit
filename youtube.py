@@ -12,12 +12,10 @@ youtube = build(api_service_name,api_version,developerKey=Api_Id)
 
 
 #get channel information
-def get_channel_info(channel_id):
-    
+def get_channel_info(channel_id): 
     request = youtube.channels().list(
                 part = "snippet,contentDetails,Statistics",
-                id = channel_id)
-            
+                id = channel_id)      
     response1=request.execute()
 
     for i in range(0,len(response1["items"])):
@@ -473,18 +471,22 @@ def show_comments_table():
     comments_table = st.dataframe(com_list)
     return comments_table
 
-
+#Function to clear the collection
+def clear_collection():
+    db = client["YT_Data_mongodb"]
+    coll1 = db["channel_details"]
+    x = coll1.delete_many({})
+    st.write("Collection cleared successfully!")
+    
 #page congiguration
 st.set_page_config(page_title= "Youtube Channel Analysis",
                    page_icon= '📈',
                    layout= "wide",)
 
 
-
 with st.sidebar:
     st.title(":red[YOUTUBE DATA HARVESTING AND WAREHOUSING]")
     st.markdown("##### ***This application is about to get Youtube Channel Id from user to fetch channel details from YouTube using the YouTube API. Store the collected data in a NoSQL database. And then channel data can be migrated to a Postgres database for further analysis.***")
-
     st.header("***:blue[Technologies Used]***")
     st.markdown('***:green[Python]***')
     st.markdown('***:green[NOSQL - MongoDB]***')
@@ -492,11 +494,15 @@ with st.sidebar:
     st.markdown('***:green[Google API integration]***')
     st.markdown('***:green[Streamlit - GUI]***')
     
-channel_id = st.text_input("Enter the Channel id")
+
+
+#Get Input from User
+channel_id = st.text_input(r"$\textsf{\Large Enter Channel Id}$")
 channels = channel_id.split(',')
 channels = [ch.strip() for ch in channels if ch]
+ 
 
-if st.button("Fetch Youtube Data to MongoDB"):
+if st.button("EXTRACT YOUTUBE DATA TO MONGODB"):
     for channel in channels:
         ch_ids = []
         db = client["YT_Data_mongodb"]
@@ -508,10 +514,17 @@ if st.button("Fetch Youtube Data to MongoDB"):
         else:
             output = channel_details(channel)
             st.success(output)
+
             
-if st.button("Migrate to SQL"):
+if st.button("MIGRATE TO SQL"):
     display = tables()
     st.success(display)
+
+
+clear_button = st.button("CLEAR COLLECTION IN MONGODB")    
+if clear_button:
+   clear_collection()
+
     
 show_table = st.radio("SELECT THE TABLE FOR VIEW",(":green[channels]",":orange[playlists]",":red[videos]",":blue[comments]"))
 
