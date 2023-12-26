@@ -1,6 +1,7 @@
 import pymongo
 import psycopg2
 import pandas as pd
+#import numpy as np
 import streamlit as st
 from googleapiclient.discovery import build
 
@@ -156,7 +157,7 @@ def channel_details(channel_id):
     coll1.insert_one({"channel_information":ch_details,"Playlist_information":pl_details,
                       "video_information":vi_details,"comment_information":com_details})
     
-    return "upload completed successfully"
+    return "Channel information stored in MongoDB Successfully"
 
 #Table creation for channels,playlists, videos, comments
 def channels_table():
@@ -495,13 +496,25 @@ with st.sidebar:
     st.markdown('***:green[Streamlit - GUI]***')
     
 
+st.markdown("""
+<style>
+div.stButton > button:first-child {
+    background-color: #DD3300;
+    color:#eeffee;
+}
+div.stButton > button:hover {
+    background-color: #00ff00;
+    color:#ff0000;
+    }
+</style>""", unsafe_allow_html=True)
+
 
 #Get Input from User
 channel_id = st.text_input(r"$\textsf{\Large Enter Channel Id}$")
 channels = channel_id.split(',')
 channels = [ch.strip() for ch in channels if ch]
  
-
+st.write("CLICK THE BELOW BUTTON TO STORE CHANNEL INFORMATION INTO MONGODB")
 if st.button("EXTRACT YOUTUBE DATA TO MONGODB"):
     for channel in channels:
         ch_ids = []
@@ -514,13 +527,13 @@ if st.button("EXTRACT YOUTUBE DATA TO MONGODB"):
         else:
             output = channel_details(channel)
             st.success(output)
-
             
+st.write("CLICK THE BELOW BUTTON TO MIGRATE DATA TO POSTGRES DATABASE")           
 if st.button("MIGRATE TO SQL"):
     display = tables()
     st.success(display)
 
-
+st.write("CLICK THE BELOW BUTTON TO DELETE CHANNEL INFORMATION FROM MONGODB")
 clear_button = st.button("CLEAR COLLECTION IN MONGODB")    
 if clear_button:
    clear_collection()
@@ -572,7 +585,9 @@ elif question == '2. Channels with most number of videos':
     cursor.execute(query2)
     mydb.commit()
     t2=cursor.fetchall()
-    st.write(pd.DataFrame(t2, columns=["Channel Name","No Of Videos"]))
+    res2 = pd.DataFrame(t2, columns=["ChannelName","NO_Videos"])
+    st.table(res2)
+    st.bar_chart(res2.set_index("ChannelName"))
 
 elif question == '3. 10 most viewed videos':
     query3 = '''select Views as views , Channel_Name as ChannelName,Title as VideoTitle from videos 
@@ -609,7 +624,9 @@ elif question == '7. views of each channel':
     cursor.execute(query7)
     mydb.commit()
     t7=cursor.fetchall()
-    st.write(pd.DataFrame(t7, columns=["channel name","total views"]))
+    res3 = pd.DataFrame(t7, columns=["ChannelName","Channelviews"])
+    st.table(res3)
+    st.bar_chart(res3.set_index("ChannelName"))
 
 elif question == '8. videos published in the year 2022':
     query8 = '''select Title as Video_Title, Published_Date as VideoRelease, Channel_Name as ChannelName from videos 
@@ -640,3 +657,6 @@ elif question == '10. videos with highest number of comments':
     mydb.commit()
     t10=cursor.fetchall()
     st.write(pd.DataFrame(t10, columns=['Video Title', 'Channel Name', 'NO Of Comments']))
+
+#Closing the Connection:
+cursor.close()
